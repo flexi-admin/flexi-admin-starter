@@ -1,0 +1,67 @@
+package io.github.zmxckj.flexiadmin.security;
+
+import io.github.zmxckj.flexiadmin.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import java.util.List;
+
+@Component
+public class SecurityUtils {
+
+    private static UserService userService;
+
+    @Autowired
+    public void setUserService(UserService userService) {
+        SecurityUtils.userService = userService;
+    }
+
+    public static Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                // 直接从CustomUserDetails中获取用户ID
+                return ((CustomUserDetails) principal).getId();
+            }
+        }
+        return null;
+    }
+
+    public static String getCurrentUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                // 从CustomUserDetails中获取用户名
+                return ((CustomUserDetails) principal).getUsername();
+            }
+        }
+        return null;
+    }
+    
+    public static Long getCurrentTenantId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                // 从CustomUserDetails中获取租户ID
+                return ((CustomUserDetails) principal).getTenantId();
+            }
+        }
+        return null;
+    }
+
+    public static boolean hasAuthority(String authority) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                List<String> authorities = ((CustomUserDetails) principal).getAuthorityStrings();
+                return authorities != null && authorities.contains(authority);
+            }
+        }
+        return false;
+    }
+}

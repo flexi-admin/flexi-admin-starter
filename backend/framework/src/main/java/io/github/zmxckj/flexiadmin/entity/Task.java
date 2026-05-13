@@ -13,6 +13,7 @@ public class Task {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long tenantId;
     private String name;
     private String cronExpression;
     private String className;

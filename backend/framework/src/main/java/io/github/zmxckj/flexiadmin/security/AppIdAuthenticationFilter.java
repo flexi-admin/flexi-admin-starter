@@ -69,31 +69,32 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
                 
                 // 获取应用权限
                 Appid appid = appidService.findByAppId(appId);
-                if (appid != null && appid.getPermissions() != null) {
-                    String[] permissions = appid.getPermissions().split(",");
-                    for (String permission : permissions) {
-                        if (!permission.trim().isEmpty()) {
-                            authorities.add(new SimpleGrantedAuthority(permission.trim()));
-                            authorityStrings.add(permission.trim());
+                if (appid != null && appid.getStatus()) {
+                    if (appid.getPermissions() != null) {
+                        String[] permissions = appid.getPermissions().split(",");
+                        for (String permission : permissions) {
+                            if (!permission.trim().isEmpty()) {
+                                authorities.add(new SimpleGrantedAuthority(permission.trim()));
+                                authorityStrings.add(permission.trim());
+                            }
                         }
                     }
-                }
+                    
+                    // 创建 CustomUserDetails
+                    CustomUserDetails userDetails = new CustomUserDetails(
+                            appid.getId() != null ? appid.getId() : 0L,
+                            appId,
+                            appid.getTenantId() != null ? appid.getTenantId() : 0L,
+                            authorityStrings,
+                            roles
+                    );
                 
-                // 创建 CustomUserDetails
-                CustomUserDetails userDetails = new CustomUserDetails(
-                        0L, // 应用ID，使用0作为默认值
-                        appId, // 使用appId作为username
-                        0L, // 租户ID，使用0作为默认值
-                        authorityStrings,
-                        roles
-                );
-                
-                // 使用 CustomUserDetails 作为 principal 创建认证 token
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, authorities
-                );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(requestToUse));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // 使用 CustomUserDetails 作为 principal 创建认证 token
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, authorities
+                    );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(requestToUse));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             } catch (Exception e) {
                 logger.info("AppId authentication failed: " + e.getMessage());

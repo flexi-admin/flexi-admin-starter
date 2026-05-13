@@ -11,6 +11,7 @@ import io.github.zmxckj.flexiadmin.service.UserRoleService;
 import io.github.zmxckj.flexiadmin.service.RoleService;
 import io.github.zmxckj.flexiadmin.service.TenantService;
 import io.github.zmxckj.flexiadmin.service.ConfigService;
+import io.github.zmxckj.flexiadmin.security.SecurityUtils;
 import io.github.zmxckj.flexiadmin.utils.JwtUtils;
 import io.github.zmxckj.flexiadmin.utils.RedisUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -173,6 +174,7 @@ public class AuthController {
      */
     private void recordLoginLog(String username, String ip, boolean status, String message) {
         LoginLog loginLog = new LoginLog();
+        loginLog.setTenantId(SecurityUtils.getCurrentTenantId());
         loginLog.setUsername(username);
         loginLog.setIp(ip);
         loginLog.setStatus(status);

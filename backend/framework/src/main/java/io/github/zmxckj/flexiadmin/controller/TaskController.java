@@ -3,6 +3,7 @@ package io.github.zmxckj.flexiadmin.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.github.zmxckj.flexiadmin.entity.Task;
 import io.github.zmxckj.flexiadmin.common.R;
+import io.github.zmxckj.flexiadmin.security.SecurityUtils;
 import io.github.zmxckj.flexiadmin.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ public class TaskController {
 
     @PostMapping
     public R<?> add(@RequestBody Task task) {
+        task.setTenantId(SecurityUtils.getCurrentTenantId());
         taskService.save(task);
         return R.success();
     }

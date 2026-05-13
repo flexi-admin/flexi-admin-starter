@@ -13,6 +13,7 @@ public class LoginLog {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long tenantId;
     private String username;
     private String ip;
     private Boolean status;

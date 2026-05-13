@@ -111,20 +111,24 @@ CREATE TABLE IF NOT EXISTS sys_role_menu (
 -- 创建操作日志表
 CREATE TABLE IF NOT EXISTS sys_operation_log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT COMMENT '租户ID',
     username VARCHAR(50),
     operation VARCHAR(200),
     ip VARCHAR(50),
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_operation_log_tenant_id (tenant_id)
 );
 
 -- 创建登录日志表
 CREATE TABLE IF NOT EXISTS sys_login_log (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT COMMENT '租户ID',
     username VARCHAR(50),
     ip VARCHAR(50),
     status BOOLEAN,
     message VARCHAR(200),
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_login_log_tenant_id (tenant_id)
 );
 
 -- 创建系统配置表
@@ -152,18 +156,21 @@ CREATE TABLE IF NOT EXISTS sys_dict (
 -- 创建定时任务表
 CREATE TABLE IF NOT EXISTS sys_task (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT COMMENT '租户ID',
     name VARCHAR(100) NOT NULL,
     cron_expression VARCHAR(50) NOT NULL,
     class_name VARCHAR(200) NOT NULL,
     status BOOLEAN DEFAULT FALSE,
     description VARCHAR(200),
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_task_tenant_id (tenant_id)
 );
 
 -- 创建图片管理表
 CREATE TABLE IF NOT EXISTS sys_image (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT COMMENT '租户ID',
     filename VARCHAR(255) NOT NULL,
     original_filename VARCHAR(255) NOT NULL,
     file_path VARCHAR(500) NOT NULL,
@@ -171,7 +178,8 @@ CREATE TABLE IF NOT EXISTS sys_image (
     file_type VARCHAR(50) NOT NULL,
     status BOOLEAN DEFAULT TRUE,
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_image_tenant_id (tenant_id)
 );
 
 -- 插入初始数据
@@ -256,17 +264,19 @@ INSERT INTO sys_config (config_key, value, description) VALUES
 -- 创建appid表
 CREATE TABLE IF NOT EXISTS sys_appid (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT COMMENT '租户ID',
     app_id VARCHAR(50) NOT NULL UNIQUE,
     secret VARCHAR(100) NOT NULL,
     name VARCHAR(100) NOT NULL,
     status BOOLEAN DEFAULT TRUE,
     permissions VARCHAR(500) COMMENT '权限列表，逗号分隔',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_appid_tenant_id (tenant_id)
 );
 
 -- 插入初始appid数据
-INSERT INTO sys_appid (app_id, secret, name, status, permissions) VALUES
-('test', 'testsecret', '测试应用', true, 'user:list,user:add'),
-('api', 'apisecret', 'API应用', true, 'user:list,role:list');
+INSERT INTO sys_appid (tenant_id, app_id, secret, name, status, permissions) VALUES
+(1, 'test', 'testsecret', '测试应用', true, 'user:list,user:add'),
+(1, 'api', 'apisecret', 'API应用', true, 'user:list,role:list');
 

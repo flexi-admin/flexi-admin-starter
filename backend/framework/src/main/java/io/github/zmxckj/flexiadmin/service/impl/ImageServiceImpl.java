@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.github.zmxckj.flexiadmin.config.OssConfig;
 import io.github.zmxckj.flexiadmin.entity.Image;
 import io.github.zmxckj.flexiadmin.mapper.ImageMapper;
+import io.github.zmxckj.flexiadmin.security.SecurityUtils;
 import io.github.zmxckj.flexiadmin.service.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -63,6 +64,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
 
         // 创建图片记录
         Image image = new Image();
+        image.setTenantId(SecurityUtils.getCurrentTenantId());
         image.setFilename(filename);
         image.setOriginalFilename(originalFilename);
         image.setFilePath(filePath.toString());
@@ -109,6 +111,7 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
 
         // 创建图片记录
         Image image = new Image();
+        image.setTenantId(SecurityUtils.getCurrentTenantId());
         image.setFilename(filename);
         image.setOriginalFilename(originalFilename);
         image.setFilePath(ossUrl);

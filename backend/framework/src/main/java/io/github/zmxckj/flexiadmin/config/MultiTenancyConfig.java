@@ -17,7 +17,10 @@ public class MultiTenancyConfig {
     
     private List<String> ignoreTables = new ArrayList<>(Arrays.asList(
             "sys_tenant",
-            "sys_config"
+            "sys_config",
+            "sys_role",
+            "sys_menu",
+            "sys_dict"
     ));
 
     public boolean isEnabled() {

@@ -4,6 +4,7 @@ import java.util.Date;
 
 public class Appid {
     private Long id;
+    private Long tenantId;
     private String appId;
     private String secret;
     private String name;
@@ -18,6 +19,14 @@ public class Appid {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
     }
 
     public String getAppId() {

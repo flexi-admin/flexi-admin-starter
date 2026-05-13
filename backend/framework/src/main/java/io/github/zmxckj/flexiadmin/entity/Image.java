@@ -11,6 +11,7 @@ import java.util.Date;
 public class Image {
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long tenantId;
     private String filename;
     private String originalFilename;
     private String filePath;

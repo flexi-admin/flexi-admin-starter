@@ -13,6 +13,7 @@ public class OperationLog {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+    private Long tenantId;
     private String username;
     private String operation;
     private String ip;

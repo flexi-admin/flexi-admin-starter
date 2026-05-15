@@ -5,7 +5,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @ConfigurationProperties(prefix = "flexi.multi-tenancy")
@@ -15,13 +17,19 @@ public class MultiTenancyConfig {
     
     private String tenantIdColumn = "tenant_id";
     
-    private List<String> ignoreTables = new ArrayList<>(Arrays.asList(
+    private List<String> ignoreTables = new ArrayList<>();
+
+    private static final List<String> DEFAULT_IGNORE_TABLES = Arrays.asList(
             "sys_tenant",
             "sys_config",
             "sys_role",
             "sys_menu",
-            "sys_dict"
-    ));
+            "sys_dict",
+            "sys_user",
+            "sys_user_role",
+            "sys_role_menu",
+            "sys_user_dept"
+    );
 
     public boolean isEnabled() {
         return enabled;
@@ -44,6 +52,12 @@ public class MultiTenancyConfig {
     }
 
     public void setIgnoreTables(List<String> ignoreTables) {
-        this.ignoreTables = ignoreTables;
+        if (ignoreTables == null || ignoreTables.isEmpty()) {
+            this.ignoreTables = new ArrayList<>(DEFAULT_IGNORE_TABLES);
+        } else {
+            Set<String> mergedSet = new HashSet<>(DEFAULT_IGNORE_TABLES);
+            mergedSet.addAll(ignoreTables);
+            this.ignoreTables = new ArrayList<>(mergedSet);
+        }
     }
 }

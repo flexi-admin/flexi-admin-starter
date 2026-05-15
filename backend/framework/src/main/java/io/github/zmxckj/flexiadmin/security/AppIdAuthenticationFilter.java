@@ -58,43 +58,44 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
                 // 验证签名
                 if (validateSignature(appId, signature, timestamp, nonce, signMethod, requestToUse)) {
                     // 构建认证信息
-                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                List<String> authorityStrings = new ArrayList<>();
-                List<String> roles = new ArrayList<>();
-                
-                // 添加应用角色
-                String appRole = "ROLE_APP";
-                authorities.add(new SimpleGrantedAuthority(appRole));
-                authorityStrings.add(appRole);
-                
-                // 获取应用权限
-                Appid appid = appidService.findByAppId(appId);
-                if (appid != null && appid.getStatus()) {
-                    if (appid.getPermissions() != null) {
-                        String[] permissions = appid.getPermissions().split(",");
-                        for (String permission : permissions) {
-                            if (!permission.trim().isEmpty()) {
-                                authorities.add(new SimpleGrantedAuthority(permission.trim()));
-                                authorityStrings.add(permission.trim());
+                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                    List<String> authorityStrings = new ArrayList<>();
+                    List<String> roles = new ArrayList<>();
+                    
+                    // 添加应用角色
+                    String appRole = "ROLE_APP";
+                    authorities.add(new SimpleGrantedAuthority(appRole));
+                    authorityStrings.add(appRole);
+                    
+                    // 获取应用权限
+                    Appid appid = appidService.findByAppId(appId);
+                    if (appid != null && appid.getStatus()) {
+                        if (appid.getPermissions() != null) {
+                            String[] permissions = appid.getPermissions().split(",");
+                            for (String permission : permissions) {
+                                if (!permission.trim().isEmpty()) {
+                                    authorities.add(new SimpleGrantedAuthority(permission.trim()));
+                                    authorityStrings.add(permission.trim());
+                                }
                             }
                         }
-                    }
+                        
+                        // 创建 CustomUserDetails
+                        CustomUserDetails userDetails = new CustomUserDetails(
+                                appid.getId() != null ? appid.getId() : 0L,
+                                appId,
+                                appid.getTenantId() != null ? appid.getTenantId() : 0L,
+                                authorityStrings,
+                                roles
+                        );
                     
-                    // 创建 CustomUserDetails
-                    CustomUserDetails userDetails = new CustomUserDetails(
-                            appid.getId() != null ? appid.getId() : 0L,
-                            appId,
-                            appid.getTenantId() != null ? appid.getTenantId() : 0L,
-                            authorityStrings,
-                            roles
-                    );
-                
-                    // 使用 CustomUserDetails 作为 principal 创建认证 token
-                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, authorities
-                    );
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(requestToUse));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                        // 使用 CustomUserDetails 作为 principal 创建认证 token
+                        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, authorities
+                        );
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(requestToUse));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                    }
                 }
             } catch (Exception e) {
                 logger.info("AppId authentication failed: " + e.getMessage());

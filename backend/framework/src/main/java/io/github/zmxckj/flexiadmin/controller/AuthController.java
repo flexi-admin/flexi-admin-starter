@@ -11,6 +11,7 @@ import io.github.zmxckj.flexiadmin.service.UserRoleService;
 import io.github.zmxckj.flexiadmin.service.RoleService;
 import io.github.zmxckj.flexiadmin.service.TenantService;
 import io.github.zmxckj.flexiadmin.service.ConfigService;
+import io.github.zmxckj.flexiadmin.config.MultiTenancyConfig;
 import io.github.zmxckj.flexiadmin.security.SecurityUtils;
 import io.github.zmxckj.flexiadmin.utils.JwtUtils;
 import io.github.zmxckj.flexiadmin.utils.RedisUtils;
@@ -43,11 +44,12 @@ public class AuthController {
     private final RoleService roleService;
     private final TenantService tenantService;
     private final ConfigService configService;
+    private final MultiTenancyConfig multiTenancyConfig;
 
     @Value("${flexi.jwt.expiration}")
     private long expiration;
 
-    public AuthController(UserService userService, MenuService menuService, LoginLogService loginLogService, JwtUtils jwtUtils, PasswordEncoder passwordEncoder, RedisUtils redisUtils, UserRoleService userRoleService, RoleService roleService, TenantService tenantService, ConfigService configService) {
+    public AuthController(UserService userService, MenuService menuService, LoginLogService loginLogService, JwtUtils jwtUtils, PasswordEncoder passwordEncoder, RedisUtils redisUtils, UserRoleService userRoleService, RoleService roleService, TenantService tenantService, ConfigService configService, MultiTenancyConfig multiTenancyConfig) {
         this.userService = userService;
         this.menuService = menuService;
         this.loginLogService = loginLogService;
@@ -57,6 +59,7 @@ public class AuthController {
         this.userRoleService = userRoleService;
         this.roleService = roleService;
         this.tenantService = tenantService;
+        this.multiTenancyConfig = multiTenancyConfig;
         this.configService = configService;
     }
 
@@ -78,7 +81,7 @@ public class AuthController {
         String ip = getClientIp(request);
 
         // 检查是否启用多租户
-        boolean multiTenantEnabled = Boolean.parseBoolean(getConfigValue("system.multi_tenant_enabled", "false"));
+        boolean multiTenantEnabled = multiTenancyConfig.isEnabled();
 
         User user;
         if (multiTenantEnabled) {
@@ -310,7 +313,7 @@ public class AuthController {
     public R<Map<String, String>> getConfig() {
         Map<String, String> config = new HashMap<>();
         // 检查是否启用多租户
-        config.put("multiTenantEnabled", getConfigValue("system.multi_tenant_enabled", "false"));
+        config.put("multiTenantEnabled", String.valueOf(multiTenancyConfig.isEnabled()));
         return R.success(config);
     }
 

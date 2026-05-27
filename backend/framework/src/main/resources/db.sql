@@ -210,11 +210,16 @@ INSERT INTO sys_menu (id, name, path, component, parent_id, icon, code, type, st
 (12, '字典管理', '/dict', 'dict/Index', 0, 'List', NULL, 'menu', true, 12),
 (13, '定时任务', '/task', 'task/Index', 0, 'Timer', NULL, 'menu', true, 13),
 (14, '图片管理', '/image', 'image/Index', 0, 'Picture', NULL, 'menu', true, 14),
+-- 个人中心
+(100, '个人中心', '/profile', '', 0, 'User', NULL, 'menu', true, 15),
+(101, '我的资产', '/profile/asset', 'business/asset/MyAsset', 100, 'Wallet', NULL, 'menu', true, 16),
+(102, '我的盘点', '/profile/inventory', 'business/asset/MyInventory', 100, 'ClipboardList', NULL, 'menu', true, 17),
 -- 操作
 (15, '用户列表', NULL, NULL, 2, NULL, 'user:list', 'operation', true, 15),
 (16, '用户添加', NULL, NULL, 2, NULL, 'user:add', 'operation', true, 16),
 (17, '用户更新', NULL, NULL, 2, NULL, 'user:update', 'operation', true, 17),
 (18, '用户删除', NULL, NULL, 2, NULL, 'user:delete', 'operation', true, 18),
+(39, '用户重置密码', NULL, NULL, 2, NULL, 'user:resetPassword', 'operation', true, 39),
 (19, '角色列表', NULL, NULL, 3, NULL, 'role:list', 'operation', true, 19),
 (20, '角色添加', NULL, NULL, 3, NULL, 'role:add', 'operation', true, 20),
 (21, '角色更新', NULL, NULL, 3, NULL, 'role:update', 'operation', true, 21),
@@ -240,7 +245,8 @@ INSERT INTO sys_menu (id, name, path, component, parent_id, icon, code, type, st
 -- 为 admin 角色分配所有菜单和操作权限
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES
 (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 8), (1, 9), (1, 10), (1, 11), (1, 12), (1, 13), (1, 14),
-(1, 15), (1, 16), (1, 17), (1, 18), (1, 19), (1, 20), (1, 21), (1, 22), (1, 23), (1, 24), (1, 25), (1, 26), (1, 27), (1, 28), (1, 29), (1, 30), (1, 31), (1, 32), (1, 33), (1, 34), (1, 35), (1, 36), (1, 37), (1, 38);
+(1, 100), (1, 101), (1, 102),
+(1, 15), (1, 16), (1, 17), (1, 18), (1, 39), (1, 19), (1, 20), (1, 21), (1, 22), (1, 23), (1, 24), (1, 25), (1, 26), (1, 27), (1, 28), (1, 29), (1, 30), (1, 31), (1, 32), (1, 33), (1, 34), (1, 35), (1, 36), (1, 37), (1, 38);
 
 -- 为日志管理员角色分配权限
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES

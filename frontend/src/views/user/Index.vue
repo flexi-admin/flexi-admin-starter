@@ -31,9 +31,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" />
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="220">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button size="small" type="warning" @click="handleResetPassword(scope.row.id)">重置密码</el-button>
             <el-button size="small" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
           </template>
         </el-table-column>
@@ -99,6 +100,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 
 const dialogVisible = ref(false)
@@ -262,6 +264,23 @@ const handleDelete = async (id: string) => {
     fetchUsers()
   } catch (error) {
     console.error('删除用户失败:', error)
+  }
+}
+
+const handleResetPassword = async (id: string) => {
+  try {
+    await ElMessageBox.confirm('确定要重置该用户的密码吗？重置后密码将变为123456', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await api.post(`/user/resetPassword/${id}`)
+    ElMessage.success('密码重置成功')
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('重置密码失败:', error)
+      ElMessage.error(error.message || '重置密码失败')
+    }
   }
 }
 

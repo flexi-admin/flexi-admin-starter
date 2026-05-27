@@ -49,7 +49,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="uploadDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="$refs.uploadRef?.submit()">上传</el-button>
+          <el-button type="primary" @click="submitUpload()">上传</el-button>
         </span>
       </template>
     </el-dialog>
@@ -112,8 +112,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive, ref as refReactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, onMounted, reactive } from 'vue'
+import { ElMessage, ElUpload } from 'element-plus'
 import api from '@/api'
 import { useConfigStore } from '@/stores/config'
 
@@ -141,13 +141,12 @@ const pageParams = reactive({
   total: 0
 })
 const sortOrder = ref('desc') // 默认倒序
-const sortField = ref('id') // 默认按id排序
+const sortField = ref('id')
 
-// 上传相关
 const uploadDialogVisible = ref(false)
 const fileList = ref([])
-const uploadRef = ref()
-const uploadTarget = ref('local') // local 或 oss
+const uploadRef = ref<InstanceType<typeof ElUpload>>()
+const uploadTarget = ref('local')
 const uploadHeaders = ref({
   'Authorization': `Bearer ${localStorage.getItem('token')}`
 })
@@ -168,9 +167,13 @@ const openImageLibrary = async () => {
   imageLibraryVisible.value = true
 }
 
-// 打开上传弹窗
 const openUploadDialog = () => {
   uploadDialogVisible.value = true
+}
+
+const submitUpload = () => {
+  const upload = uploadRef.value as { submit: () => void }
+  upload?.submit()
 }
 
 // 处理上传成功

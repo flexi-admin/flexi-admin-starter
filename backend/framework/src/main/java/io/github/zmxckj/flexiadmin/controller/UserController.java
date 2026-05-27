@@ -6,6 +6,7 @@ import io.github.zmxckj.flexiadmin.entity.UserRole;
 import io.github.zmxckj.flexiadmin.entity.UserDept;
 import io.github.zmxckj.flexiadmin.dto.AssignRoleDTO;
 import io.github.zmxckj.flexiadmin.dto.AssignDeptDTO;
+import io.github.zmxckj.flexiadmin.dto.ChangePasswordDTO;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.security.RequirePermission;
 import io.github.zmxckj.flexiadmin.security.SecurityUtils;
@@ -107,11 +108,44 @@ public class UserController {
             return R.error(403, "无权操作其他租户的用户");
         }
         
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        }
+        user.setPassword(null);
         userService.updateById(user);
         return R.success();
+    }
+
+    @PostMapping("/changePassword")
+    public R<?> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        
+        User user = userService.getById(userId);
+        if (user == null) {
+            return R.error(404, "用户不存在");
+        }
+        
+        if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {
+            return R.error(400, "旧密码不正确");
+        }
+        
+        user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+        userService.updateById(user);
+        return R.success("密码修改成功");
+    }
+
+    @RequirePermission("user:resetPassword")
+    @PostMapping("/resetPassword/{id}")
+    public R<?> resetPassword(@PathVariable Long id) {
+        if (!checkUserTenant(id)) {
+            return R.error(403, "无权操作其他租户的用户");
+        }
+        
+        User user = userService.getById(id);
+        if (user == null) {
+            return R.error(404, "用户不存在");
+        }
+        
+        user.setPassword(passwordEncoder.encode("123456"));
+        userService.updateById(user);
+        return R.success("密码已重置为123456");
     }
 
     @RequirePermission("user:delete")

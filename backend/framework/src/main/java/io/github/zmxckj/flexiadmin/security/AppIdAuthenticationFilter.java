@@ -42,13 +42,22 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
         String timestamp = request.getHeader("X-Timestamp");
         String nonce = request.getHeader("X-Nonce");
         String signMethod = request.getHeader("X-Sign-Method");
+        String tenantIdStr = request.getHeader("X-Tenant-Id");
+        Long tenantId = 0L;
+        if (tenantIdStr != null && !tenantIdStr.isEmpty()) {
+            try {
+                tenantId = Long.parseLong(tenantIdStr);
+            } catch (NumberFormatException e) {
+                logger.info("Invalid X-Tenant-Id format");
+            }
+        }
 
         HttpServletRequest requestToUse = request;
 
         if (appId != null && signature != null && timestamp != null && nonce != null) {
             try {
-                // 检查是否需要读取body
-                boolean needToReadBody = "POST".equals(request.getMethod()) || "PUT".equals(request.getMethod());
+                // 检查是否需要读取body（文件上传请求不读取body）
+                boolean needToReadBody = ("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod())) && !isMultipartRequest(request);
                 
                 // 只有在需要读取body时才创建缓存请求
                 if (needToReadBody) {
@@ -56,7 +65,7 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
                 }
                 
                 // 验证签名
-                if (validateSignature(appId, signature, timestamp, nonce, signMethod, requestToUse)) {
+                if (validateSignature(appId, signature, timestamp, nonce, signMethod, tenantId, requestToUse)) {
                     // 构建认证信息
                     List<SimpleGrantedAuthority> authorities = new ArrayList<>();
                     List<String> authorityStrings = new ArrayList<>();
@@ -68,7 +77,7 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
                     authorityStrings.add(appRole);
                     
                     // 获取应用权限
-                    Appid appid = appidService.findByAppId(appId);
+                    Appid appid = appidService.findByAppId(appId, tenantId);
                     if (appid != null && appid.getStatus()) {
                         if (appid.getPermissions() != null) {
                             String[] permissions = appid.getPermissions().split(",");
@@ -106,9 +115,9 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(requestToUse, response);
     }
 
-    private boolean validateSignature(String appId, String signature, String timestamp, String nonce, String signMethod, HttpServletRequest request) throws Exception {
+    private boolean validateSignature(String appId, String signature, String timestamp, String nonce, String signMethod, Long tenantId, HttpServletRequest request) throws Exception {
         // 从服务中获取appid信息
-        Appid appid = appidService.findByAppId(appId);
+        Appid appid = appidService.findByAppId(appId, tenantId);
         if (appid == null || !appid.getStatus()) {
             return false;
         }
@@ -149,8 +158,14 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
         
         // 如果有请求体数据，添加到签名内容中
         if ("POST".equals(request.getMethod()) || "PUT".equals(request.getMethod())) {
-            // 使用缓存的请求体
-            content.append(((CachedBodyHttpServletRequest) request).getCachedBody());
+            // 如果是文件上传，不包含文件内容在签名中
+            if (isMultipartRequest(request)) {
+                // 文件上传时只使用appId + timestamp + nonce + method + url进行签名
+                // 不添加请求体内容
+            } else {
+                // 使用缓存的请求体
+                content.append(((CachedBodyHttpServletRequest) request).getCachedBody());
+            }
         } else if ("GET".equals(request.getMethod()) || "DELETE".equals(request.getMethod())) {
             // 对于GET和DELETE请求，使用查询参数作为签名内容
             String queryString = request.getQueryString();
@@ -180,23 +195,36 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
         }
         // 将哈希结果转换为十六进制字符串
         String expectedSignature = Integer.toHexString(hash);
+        boolean matched = expectedSignature.equals(signature);
+        if (!matched) {
+            logger.warning("签名不匹配");
+        }
 
         // 比较生成的签名与请求中的签名
-        return expectedSignature.equals(signature);
+        return matched;
     }
 
     // 标准HMAC-SHA256签名验证
     private boolean validateStandardSignature(String appId, String signature, String timestamp, String nonce, String secret, HttpServletRequest request) throws Exception {
         // 构建签名内容
-        String content = appId + timestamp + nonce + getRequestContent(request);
+        String content = appId + timestamp + nonce;
+        
+        // 如果是文件上传，不包含请求体内容在签名中
+        if (!isMultipartRequest(request)) {
+            content += getRequestContent(request);
+        }
         
         // 使用HMAC-SHA256生成签名
         String expectedSignature = generateHMACSHA256(content, secret);
-        System.out.println(signature);
-        System.out.println(expectedSignature);
+        //System.out.println(signature);
+        //System.out.println(expectedSignature);
+        boolean validSignature = expectedSignature.equals(signature);
+        if (!validSignature) {
+            logger.warning("签名不匹配");
+        }
 
         // 比较生成的签名与请求中的签名
-        return expectedSignature.equals(signature);
+        return validSignature;
     }
 
     private String getRequestContent(HttpServletRequest request) throws IOException {
@@ -233,5 +261,13 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
         mac.init(secretKeySpec);
         byte[] bytes = mac.doFinal(data.getBytes("UTF-8"));
         return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    /**
+     * 判断是否是文件上传请求
+     */
+    private boolean isMultipartRequest(HttpServletRequest request) {
+        String contentType = request.getContentType();
+        return contentType != null && contentType.toLowerCase().startsWith("multipart/");
     }
 }

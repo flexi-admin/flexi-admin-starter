@@ -4,5 +4,5 @@ import io.github.zmxckj.flexiadmin.entity.Appid;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 public interface AppidMapper extends BaseMapper<Appid> {
-    Appid selectByAppId(String appId);
+    Appid selectByAppId(String appId, Long tenantId);
 }

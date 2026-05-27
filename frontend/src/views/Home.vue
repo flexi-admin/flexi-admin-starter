@@ -70,20 +70,21 @@
                 <span class="username">{{ userStore.userInfo.nickname || userStore.userInfo.username || '管理员' }}</span>
                 <el-avatar :size="32" style="margin-left: 12px;" />
                 <el-dropdown trigger="click">
-                  <el-button link style="margin-left: 12px;">
-                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+                      <el-button link style="margin-left: 12px;">
+                        <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item @click="handleChangePassword">修改密码</el-dropdown-item>
+                          <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          
-          <!-- 标签栏 -->
+              
+              <!-- 标签栏 -->
           <div class="tabs-container">
             <div class="tabs-wrapper">
               <el-tabs v-model="activeTab" type="card" closable @tab-remove="handleTabClose" @tab-click="handleTabUpdate">
@@ -126,14 +127,36 @@
       </el-container>
     </el-container>
   </div>
+
+  <!-- 修改密码对话框 -->
+  <el-dialog v-model="changePasswordDialogVisible" title="修改密码" width="400px">
+    <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="80px">
+      <el-form-item label="旧密码" prop="oldPassword">
+        <el-input v-model="passwordForm.oldPassword" type="password" placeholder="请输入旧密码" show-password />
+      </el-form-item>
+      <el-form-item label="新密码" prop="newPassword">
+        <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+      </el-form-item>
+      <el-form-item label="确认密码" prop="confirmPassword">
+        <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请确认新密码" show-password />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="changePasswordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handlePasswordSubmit">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { useConfigStore } from '../stores/config'
 import { ArrowDown, ArrowDownBold } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import api from '@/api'
 import Welcome from './Welcome.vue'
 
@@ -141,6 +164,38 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const configStore = useConfigStore()
+const passwordFormRef = ref()
+
+// 修改密码相关
+const changePasswordDialogVisible = ref(false)
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const validateConfirmPassword = (_rule: any, value: string, callback: any) => {
+  if (value !== passwordForm.newPassword) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const passwordRules = {
+  oldPassword: [
+    { required: true, message: '请输入旧密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: 'blur' }
+  ]
+}
+
 const activeMenu = ref('user')
 const activeTab = ref('user')
 const activeFirstLevelMenu = ref('1') // 默认选中第一个一级菜单
@@ -507,6 +562,35 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+// 修改密码
+const handleChangePassword = () => {
+  passwordForm.oldPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+  changePasswordDialogVisible.value = true
+}
+
+const handlePasswordSubmit = async () => {
+  if (!passwordFormRef.value) return
+  passwordFormRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      try {
+        await api.post('/user/changePassword', {
+          oldPassword: passwordForm.oldPassword,
+          newPassword: passwordForm.newPassword
+        })
+        ElMessage.success('密码修改成功')
+        changePasswordDialogVisible.value = false
+        passwordForm.oldPassword = ''
+        passwordForm.newPassword = ''
+        passwordForm.confirmPassword = ''
+      } catch (error: any) {
+        ElMessage.error(error.message || '密码修改失败')
+      }
+    }
+  })
+}
+
 // 关闭所有标签页
 const handleCloseAllTabs = () => {
   // 清空所有标签
@@ -735,5 +819,11 @@ const handleCloseOtherTabs = () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 </style>

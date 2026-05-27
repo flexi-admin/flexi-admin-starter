@@ -28,7 +28,8 @@ public class MultiTenancyConfig {
             "sys_user",
             "sys_user_role",
             "sys_role_menu",
-            "sys_user_dept"
+            "sys_user_dept",
+            "sys_appid"
     );
 
     public boolean isEnabled() {

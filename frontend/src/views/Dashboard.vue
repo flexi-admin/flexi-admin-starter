@@ -12,7 +12,7 @@
           <span>{{ currentDate }}</span>
           <span class="day-of-week">{{ dayOfWeek }}</span>
         </div>
-        <el-button type="primary" @click="toggleFullscreen" :icon="isFullscreen ? 'FullscreenExit' : 'Fullscreen'">
+        <el-button type="primary" @click="toggleFullscreen" :icon="FullScreen">
           {{ isFullscreen ? '退出全屏' : '全屏' }}
         </el-button>
       </div>
@@ -146,7 +146,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue'
 import { useConfigStore } from '../stores/config'
-import { Fullscreen, FullscreenExit, Calendar, Goods, Delete, DataAnalysis, Check } from '@element-plus/icons-vue'
+import { FullScreen, Calendar, Goods, Delete, DataAnalysis, Check } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import api from '../api'
 
@@ -295,10 +295,13 @@ const updateCurrentTime = () => {
   dayOfWeek.value = weekdays[now.getDay()]
 }
 
-// 切换全屏
 const toggleFullscreen = () => {
   if (!isFullscreen.value) {
-    const element = document.documentElement
+    const element = document.documentElement as HTMLElement & {
+      mozRequestFullScreen?: () => void
+      webkitRequestFullscreen?: () => void
+      msRequestFullscreen?: () => void
+    }
     if (element.requestFullscreen) {
       element.requestFullscreen()
     } else if (element.mozRequestFullScreen) {
@@ -309,14 +312,19 @@ const toggleFullscreen = () => {
       element.msRequestFullscreen()
     }
   } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    } else if (document.mozCancelFullScreen) {
-      document.mozCancelFullScreen()
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen()
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen()
+    const doc = document as Document & {
+      mozCancelFullScreen?: () => void
+      webkitExitFullscreen?: () => void
+      msExitFullscreen?: () => void
+    }
+    if (doc.exitFullscreen) {
+      doc.exitFullscreen()
+    } else if (doc.mozCancelFullScreen) {
+      doc.mozCancelFullScreen()
+    } else if (doc.webkitExitFullscreen) {
+      doc.webkitExitFullscreen()
+    } else if (doc.msExitFullscreen) {
+      doc.msExitFullscreen()
     }
   }
 }
@@ -682,13 +690,12 @@ const destroyCharts = () => {
   amountChart?.dispose()
 }
 
-// 防抖函数
-const debounce = (func, delay) => {
-  let timer = null
-  return function() {
+const debounce = <T extends (...args: unknown[]) => unknown>(func: T, delay: number) => {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  return function(this: unknown, ...args: Parameters<T>) {
     clearTimeout(timer)
     timer = setTimeout(() => {
-      func.apply(this, arguments)
+      func.apply(this, args)
     }, delay)
   }
 }
@@ -704,14 +711,17 @@ const resizeCharts = debounce(() => {
   })
 }, 200)
 
-// 监听全屏状态变化
 const handleFullscreenChange = () => {
-  isFullscreen.value = !!(document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement)
+  const doc = document as Document & {
+    mozFullScreenElement?: Element | null
+    webkitFullscreenElement?: Element | null
+    msFullscreenElement?: Element | null
+  }
+  isFullscreen.value = !!(doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement)
 }
 
-// 调整页面高度
 const adjustHeight = () => {
-  const container = document.querySelector('.dashboard-container')
+  const container = document.querySelector('.dashboard-container') as HTMLElement | null
   if (container) {
     container.style.height = `${window.innerHeight}px`
   }

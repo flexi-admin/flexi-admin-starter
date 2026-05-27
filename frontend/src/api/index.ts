@@ -2,9 +2,14 @@ import axios from 'axios'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
 
-// 创建axios实例
+const isElectron = typeof window !== 'undefined' && (
+  typeof (window as any).process !== 'undefined' || 
+  typeof (window as any).ipcRenderer !== 'undefined' ||
+  (typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().indexOf('electron') > -1)
+)
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: isElectron ? 'https://example.com/api' : '/api',
   timeout: 10000,
   withCredentials: false
 })

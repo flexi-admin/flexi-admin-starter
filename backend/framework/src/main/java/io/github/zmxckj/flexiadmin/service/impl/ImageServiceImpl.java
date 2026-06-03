@@ -36,6 +36,11 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
 
     @Override
     public Image uploadImage(MultipartFile file) throws IOException {
+        return uploadImage(file, null);
+    }
+
+    @Override
+    public Image uploadImage(MultipartFile file, String customFilename) throws IOException {
         // 检查文件大小
         if (file.getSize() > maxFileSize) {
             throw new IOException("File size exceeds the limit of " + (maxFileSize / 1024 / 1024) + "MB");
@@ -47,17 +52,22 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             throw new IOException("Only image files are allowed");
         }
 
-        // 确保上传目录存在
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // 生成唯一文件名
+        // 生成文件名：如果传入了filename则使用，否则使用UUID生成
         String originalFilename = file.getOriginalFilename();
         String extension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf('.')) : "";
-        String filename = UUID.randomUUID().toString() + extension;
-        Path filePath = uploadPath.resolve(filename);
+        String filename;
+        if (customFilename != null && !customFilename.isEmpty()) {
+            filename = customFilename;
+        } else {
+            filename = UUID.randomUUID().toString() + extension;
+        }
+        
+        // 确保上传目录和子目录存在
+        Path filePath = Paths.get(uploadDir).resolve(filename);
+        Path parentDir = filePath.getParent();
+        if (parentDir != null && !Files.exists(parentDir)) {
+            Files.createDirectories(parentDir);
+        }
 
         // 保存文件到本地
         Files.copy(file.getInputStream(), filePath);
@@ -80,6 +90,11 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
 
     @Override
     public Image uploadImageToOss(MultipartFile file) throws IOException {
+        return uploadImageToOss(file, null);
+    }
+
+    @Override
+    public Image uploadImageToOss(MultipartFile file, String customFilename) throws IOException {
         // 检查文件大小
         if (file.getSize() > maxFileSize) {
             throw new IOException("File size exceeds the limit of " + (maxFileSize / 1024 / 1024) + "MB");
@@ -91,10 +106,15 @@ public class ImageServiceImpl extends ServiceImpl<ImageMapper, Image> implements
             throw new IOException("Only image files are allowed");
         }
 
-        // 生成唯一文件名
+        // 生成文件名：如果传入了filename则使用，否则使用UUID生成
         String originalFilename = file.getOriginalFilename();
         String extension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf('.')) : "";
-        String filename = "images/" + UUID.randomUUID().toString() + extension;
+        String filename;
+        if (customFilename != null && !customFilename.isEmpty()) {
+            filename = "images/" + customFilename;
+        } else {
+            filename = "images/" + UUID.randomUUID().toString() + extension;
+        }
 
         // 上传到阿里云OSS
         try (InputStream inputStream = file.getInputStream()) {

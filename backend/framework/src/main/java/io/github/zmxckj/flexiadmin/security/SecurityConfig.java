@@ -2,7 +2,7 @@ package io.github.zmxckj.flexiadmin.security;
 
 import io.github.zmxckj.flexiadmin.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -21,23 +21,24 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
+@EnableConfigurationProperties(SecurityProperties.class)
 public class SecurityConfig {
 
     private final JwtUtils jwtUtils;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AppIdAuthenticationFilter appIdAuthenticationFilter;
     private final List<SecurityPermitPathProvider> permitPathProviders;
-
-    @Value("${flexi.security.permit-paths:}")
-    private String permitPaths;
+    private final SecurityProperties securityProperties;
 
     @Autowired
     public SecurityConfig(JwtUtils jwtUtils, JwtAuthenticationFilter jwtAuthenticationFilter, AppIdAuthenticationFilter appIdAuthenticationFilter, 
-                         @Autowired(required = false) List<SecurityPermitPathProvider> permitPathProviders) {
+                         @Autowired(required = false) List<SecurityPermitPathProvider> permitPathProviders,
+                         SecurityProperties securityProperties) {
         this.jwtUtils = jwtUtils;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.appIdAuthenticationFilter = appIdAuthenticationFilter;
         this.permitPathProviders = permitPathProviders != null ? permitPathProviders : new ArrayList<>();
+        this.securityProperties = securityProperties;
     }
 
     @Bean
@@ -51,9 +52,9 @@ public class SecurityConfig {
                         .requestMatchers("/images/**").permitAll();
                 
                 // 添加配置的开放路径
-                if (StringUtils.hasText(permitPaths)) {
-                    String[] paths = permitPaths.split(",");
-                    for (String path : paths) {
+                List<String> permitPaths = securityProperties.getPermitPaths();
+                if (permitPaths != null && !permitPaths.isEmpty()) {
+                    for (String path : permitPaths) {
                         if (StringUtils.hasText(path)) {
                             authorize.requestMatchers(path.trim()).permitAll();
                         }

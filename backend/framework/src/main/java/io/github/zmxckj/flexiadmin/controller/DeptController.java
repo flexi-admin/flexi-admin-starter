@@ -1,5 +1,6 @@
 package io.github.zmxckj.flexiadmin.controller;
 
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.entity.Dept;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.security.RequirePermission;
@@ -72,6 +73,7 @@ public class DeptController {
     /**
      * 新增部门
      */
+    @Log(operation = "新增部门")
     @RequirePermission("dept:add")
     @PostMapping
     public R<?> save(@RequestBody Dept dept) {
@@ -87,6 +89,7 @@ public class DeptController {
     /**
      * 修改部门
      */
+    @Log(operation = "修改部门")
     @RequirePermission("dept:update")
     @PutMapping
     public R<?> update(@RequestBody Dept dept) {
@@ -107,6 +110,7 @@ public class DeptController {
     /**
      * 删除部门
      */
+    @Log(operation = "删除部门")
     @RequirePermission("dept:delete")
     @DeleteMapping("/{id}")
     public R<?> delete(@PathVariable Long id) {

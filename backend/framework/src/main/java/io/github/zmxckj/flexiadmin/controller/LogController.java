@@ -1,6 +1,7 @@
 package io.github.zmxckj.flexiadmin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.entity.OperationLog;
 import io.github.zmxckj.flexiadmin.entity.LoginLog;
 import io.github.zmxckj.flexiadmin.common.R;
@@ -46,12 +47,14 @@ public class LogController {
         return R.success(response);
     }
 
+    @Log(operation = "删除操作日志")
     @DeleteMapping("/operation/{id}")
     public R<?> deleteOperationLog(@PathVariable Long id) {
         operationLogService.removeById(id);
         return R.success();
     }
 
+    @Log(operation = "删除登录日志")
     @DeleteMapping("/login/{id}")
     public R<?> deleteLoginLog(@PathVariable Long id) {
         loginLogService.removeById(id);

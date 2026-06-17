@@ -2,6 +2,7 @@ package io.github.zmxckj.flexiadmin.controller;
 
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.entity.Tenant;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.service.TenantService;
 import io.github.zmxckj.flexiadmin.security.RequirePermission;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ public class TenantController {
     }
     
     @PostMapping("/add")
+    @Log(operation = "新增租户")
     @RequirePermission("tenant:add")
     public R add(@RequestBody Tenant tenant) {
         boolean saved = tenantService.save(tenant);
@@ -31,6 +33,7 @@ public class TenantController {
     }
     
     @PutMapping("/update")
+    @Log(operation = "修改租户")
     @RequirePermission("tenant:update")
     public R update(@RequestBody Tenant tenant) {
         boolean updated = tenantService.updateById(tenant);
@@ -38,6 +41,7 @@ public class TenantController {
     }
     
     @DeleteMapping("/delete/{id}")
+    @Log(operation = "删除租户")
     @RequirePermission("tenant:delete")
     public R delete(@PathVariable Long id) {
         boolean deleted = tenantService.removeById(id);

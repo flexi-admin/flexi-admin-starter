@@ -1,5 +1,6 @@
 package io.github.zmxckj.flexiadmin.controller;
 
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.entity.*;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.dto.LoginDTO;
@@ -73,6 +74,7 @@ public class AuthController {
         }
     }
 
+    @Log(operation = "登录", sensitiveFields = {"password", "newPassword", "oldPassword", "token", "authorization"})
     @PostMapping("/login")
     public R<Map<String, Object>> login(@RequestBody LoginDTO loginDTO, HttpServletRequest request) {
         String username = loginDTO.getUsername();
@@ -254,6 +256,7 @@ public class AuthController {
         return R.success(response);
     }
 
+    @Log(operation = "登出")
     @PostMapping("/logout")
     public R<?> logout(HttpServletRequest request) {
         // 从请求头中获取Authorization token
@@ -274,6 +277,7 @@ public class AuthController {
         }
     }
 
+    @Log(operation = "刷新Token", sensitiveFields = {"password", "token", "authorization"})
     @PostMapping("/refresh")
     public R<Map<String, Object>> refreshToken(HttpServletRequest request) {
         // 从请求头中获取Authorization token

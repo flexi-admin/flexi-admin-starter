@@ -17,9 +17,7 @@ public class MultiTenancyConfig {
     
     private String tenantIdColumn = "tenant_id";
     
-    private List<String> ignoreTables = new ArrayList<>();
-
-    private static final List<String> DEFAULT_IGNORE_TABLES = Arrays.asList(
+    private List<String> ignoreTables = new ArrayList<>(Arrays.asList(
             "sys_tenant",
             "sys_config",
             "sys_role",
@@ -30,7 +28,7 @@ public class MultiTenancyConfig {
             "sys_role_menu",
             "sys_user_dept",
             "sys_appid"
-    );
+    ));
 
     public boolean isEnabled() {
         return enabled;
@@ -53,10 +51,8 @@ public class MultiTenancyConfig {
     }
 
     public void setIgnoreTables(List<String> ignoreTables) {
-        if (ignoreTables == null || ignoreTables.isEmpty()) {
-            this.ignoreTables = new ArrayList<>(DEFAULT_IGNORE_TABLES);
-        } else {
-            Set<String> mergedSet = new HashSet<>(DEFAULT_IGNORE_TABLES);
+        if (ignoreTables != null && !ignoreTables.isEmpty()) {
+            Set<String> mergedSet = new HashSet<>(this.ignoreTables);
             mergedSet.addAll(ignoreTables);
             this.ignoreTables = new ArrayList<>(mergedSet);
         }

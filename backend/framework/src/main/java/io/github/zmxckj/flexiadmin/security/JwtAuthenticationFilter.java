@@ -81,6 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     CustomUserDetails userDetails = new CustomUserDetails(
                             userId,
                             username,
+                            userInfo.getNickname(),
                             tenantId,
                             authorityStrings,
                             roles

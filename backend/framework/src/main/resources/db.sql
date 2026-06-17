@@ -17,6 +17,7 @@ DROP TABLE IF EXISTS sys_login_log;
 DROP TABLE IF EXISTS sys_config;
 DROP TABLE IF EXISTS sys_dict;
 DROP TABLE IF EXISTS sys_task;
+DROP TABLE IF EXISTS sys_task_log;
 DROP TABLE IF EXISTS sys_image;
 
 -- 创建租户表
@@ -115,6 +116,7 @@ CREATE TABLE IF NOT EXISTS sys_operation_log (
     username VARCHAR(50),
     operation VARCHAR(200),
     ip VARCHAR(50),
+    params TEXT COMMENT '请求参数(已脱敏)',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_operation_log_tenant_id (tenant_id)
 );
@@ -159,12 +161,37 @@ CREATE TABLE IF NOT EXISTS sys_task (
     tenant_id BIGINT COMMENT '租户ID',
     name VARCHAR(100) NOT NULL,
     cron_expression VARCHAR(50) NOT NULL,
-    class_name VARCHAR(200) NOT NULL,
+    class_name VARCHAR(200) COMMENT '任务类名（方式一）',
+    bean_name VARCHAR(100) COMMENT 'Spring Bean名（方式二）',
+    method_name VARCHAR(100) COMMENT 'Bean方法名（方式二）',
     status BOOLEAN DEFAULT FALSE,
     description VARCHAR(200),
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_task_tenant_id (tenant_id)
+);
+
+-- 创建定时任务执行日志表
+CREATE TABLE IF NOT EXISTS sys_task_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT COMMENT '租户ID',
+    task_id BIGINT NOT NULL COMMENT '任务ID',
+    task_name VARCHAR(100) NOT NULL COMMENT '任务名称',
+    task_class_name VARCHAR(200) COMMENT '任务类名',
+    task_bean_name VARCHAR(100) COMMENT 'Spring Bean名',
+    task_method_name VARCHAR(100) COMMENT 'Bean方法名',
+    cron_expression VARCHAR(50) COMMENT 'Cron表达式',
+    status VARCHAR(20) NOT NULL COMMENT '执行状态：SUCCESS/FAILED',
+    error_message TEXT COMMENT '错误信息',
+    result_message TEXT COMMENT '执行结果信息',
+    start_time DATETIME NOT NULL COMMENT '开始时间',
+    end_time DATETIME COMMENT '结束时间',
+    duration BIGINT COMMENT '执行时长（毫秒）',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_task_log_tenant_id (tenant_id),
+    INDEX idx_task_log_task_id (task_id),
+    INDEX idx_task_log_start_time (start_time)
 );
 
 -- 创建图片管理表
@@ -210,6 +237,7 @@ INSERT INTO sys_menu (id, name, path, component, parent_id, icon, code, type, st
 (12, '字典管理', '/dict', 'dict/Index', 0, 'List', NULL, 'menu', true, 12),
 (13, '定时任务', '/task', 'task/Index', 0, 'Timer', NULL, 'menu', true, 13),
 (14, '图片管理', '/image', 'image/Index', 0, 'Picture', NULL, 'menu', true, 14),
+(44, '定时任务日志', '/task-log', 'taskLog/Index', 9, 'Document', NULL, 'menu', true, 12),
 -- 操作
 (15, '用户列表', NULL, NULL, 2, NULL, 'user:list', 'operation', true, 15),
 (16, '用户添加', NULL, NULL, 2, NULL, 'user:add', 'operation', true, 16),
@@ -235,13 +263,20 @@ INSERT INTO sys_menu (id, name, path, component, parent_id, icon, code, type, st
 (31, '日志列表', NULL, NULL, 9, NULL, 'log:list', 'operation', true, 31),
 (32, '图片列表', NULL, NULL, 14, NULL, 'image:list', 'operation', true, 32),
 (33, '图片上传', NULL, NULL, 14, NULL, 'image:upload', 'operation', true, 33),
-(34, '图片删除', NULL, NULL, 14, NULL, 'image:delete', 'operation', true, 34);
+(34, '图片删除', NULL, NULL, 14, NULL, 'image:delete', 'operation', true, 34),
+(40, '任务列表', NULL, NULL, 13, NULL, 'task:list', 'operation', true, 40),
+(41, '任务添加', NULL, NULL, 13, NULL, 'task:add', 'operation', true, 41),
+(42, '任务更新', NULL, NULL, 13, NULL, 'task:update', 'operation', true, 42),
+(43, '任务删除', NULL, NULL, 13, NULL, 'task:delete', 'operation', true, 43),
+(45, '任务日志列表', NULL, NULL, 44, NULL, 'task-log:list', 'operation', true, 45),
+(46, '任务日志删除', NULL, NULL, 44, NULL, 'task-log:delete', 'operation', true, 46);
 
 -- 插入角色菜单关联
 -- 为 admin 角色分配所有菜单和操作权限
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES
-(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 8), (1, 9), (1, 10), (1, 11), (1, 12), (1, 13), (1, 14),
-(1, 15), (1, 16), (1, 17), (1, 18), (1, 39), (1, 19), (1, 20), (1, 21), (1, 22), (1, 23), (1, 24), (1, 25), (1, 26), (1, 27), (1, 28), (1, 29), (1, 30), (1, 31), (1, 32), (1, 33), (1, 34), (1, 35), (1, 36), (1, 37), (1, 38);
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 8), (1, 9), (1, 10), (1, 11), (1, 12), (1, 13), (1, 14), (1, 44),
+(1, 15), (1, 16), (1, 17), (1, 18), (1, 39), (1, 19), (1, 20), (1, 21), (1, 22), (1, 23), (1, 24), (1, 25), (1, 26), (1, 27), (1, 28), (1, 29), (1, 30), (1, 31), (1, 32), (1, 33), (1, 34), (1, 35), (1, 36), (1, 37), (1, 38),
+(1, 40), (1, 41), (1, 42), (1, 43), (1, 45), (1, 46);
 
 -- 为日志管理员角色分配权限
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES

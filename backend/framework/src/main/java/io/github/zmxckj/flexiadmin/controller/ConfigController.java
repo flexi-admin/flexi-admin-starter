@@ -1,6 +1,7 @@
 package io.github.zmxckj.flexiadmin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.entity.Config;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.service.ConfigService;
@@ -27,18 +28,21 @@ public class ConfigController {
         return R.success(response);
     }
 
+    @Log(operation = "新增配置")
     @PostMapping
     public R<?> add(@RequestBody Config config) {
         configService.save(config);
         return R.success();
     }
 
+    @Log(operation = "修改配置")
     @PutMapping
     public R<?> update(@RequestBody Config config) {
         configService.updateById(config);
         return R.success();
     }
 
+    @Log(operation = "删除配置")
     @DeleteMapping("/{id}")
     public R<?> delete(@PathVariable Long id) {
         configService.removeById(id);

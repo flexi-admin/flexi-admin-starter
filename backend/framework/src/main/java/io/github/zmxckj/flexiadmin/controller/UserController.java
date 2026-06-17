@@ -7,6 +7,7 @@ import io.github.zmxckj.flexiadmin.entity.UserDept;
 import io.github.zmxckj.flexiadmin.dto.AssignRoleDTO;
 import io.github.zmxckj.flexiadmin.dto.AssignDeptDTO;
 import io.github.zmxckj.flexiadmin.dto.ChangePasswordDTO;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.security.RequirePermission;
 import io.github.zmxckj.flexiadmin.security.SecurityUtils;
@@ -78,6 +79,7 @@ public class UserController {
     }
 
     @RequirePermission("user:add")
+    @Log(operation = "新增用户")
     @PostMapping
     public R<User> add(@RequestBody User user) {
         // 以当前登录用户的租户ID填充
@@ -101,6 +103,7 @@ public class UserController {
     }
 
     @RequirePermission("user:update")
+    @Log(operation = "修改用户")
     @PutMapping
     public R<?> update(@RequestBody User user) {
         // 检查用户是否属于当前租户
@@ -113,6 +116,7 @@ public class UserController {
         return R.success();
     }
 
+    @Log(operation = "修改密码")
     @PostMapping("/changePassword")
     public R<?> changePassword(@RequestBody ChangePasswordDTO changePasswordDTO) {
         Long userId = SecurityUtils.getCurrentUserId();
@@ -132,6 +136,7 @@ public class UserController {
     }
 
     @RequirePermission("user:resetPassword")
+    @Log(operation = "重置密码")
     @PostMapping("/resetPassword/{id}")
     public R<?> resetPassword(@PathVariable Long id) {
         if (!checkUserTenant(id)) {
@@ -149,6 +154,7 @@ public class UserController {
     }
 
     @RequirePermission("user:delete")
+    @Log(operation = "删除用户")
     @DeleteMapping("/{id}")
     public R<?> delete(@PathVariable Long id) {
         // 检查用户是否属于当前租户
@@ -174,6 +180,7 @@ public class UserController {
     /**
      * 为用户分配角色
      */
+    @Log(operation = "分配角色")
     @PostMapping("/assignRole")
     public R<?> assignRole(@RequestBody AssignRoleDTO assignRoleDTO) {
         Long userId = assignRoleDTO.getUserId();
@@ -213,6 +220,7 @@ public class UserController {
     /**
      * 为用户分配部门
      */
+    @Log(operation = "分配部门")
     @PostMapping("/assignDept")
     public R<?> assignDept(@RequestBody AssignDeptDTO assignDeptDTO) {
         Long userId = assignDeptDTO.getUserId();

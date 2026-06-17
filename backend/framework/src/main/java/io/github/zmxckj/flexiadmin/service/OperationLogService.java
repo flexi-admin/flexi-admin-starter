@@ -4,4 +4,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import io.github.zmxckj.flexiadmin.entity.OperationLog;
 
 public interface OperationLogService extends IService<OperationLog> {
+    void saveAsync(OperationLog log);
 }

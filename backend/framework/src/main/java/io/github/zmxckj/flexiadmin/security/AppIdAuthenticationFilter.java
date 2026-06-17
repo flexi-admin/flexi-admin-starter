@@ -93,6 +93,7 @@ public class AppIdAuthenticationFilter extends OncePerRequestFilter {
                         CustomUserDetails userDetails = new CustomUserDetails(
                                 appid.getId() != null ? appid.getId() : 0L,
                                 appId,
+                                appId,
                                 appid.getTenantId() != null ? appid.getTenantId() : 0L,
                                 authorityStrings,
                                 roles

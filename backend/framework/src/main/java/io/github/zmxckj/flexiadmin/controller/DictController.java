@@ -1,6 +1,7 @@
 package io.github.zmxckj.flexiadmin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.entity.Dict;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.service.DictService;
@@ -30,18 +31,21 @@ public class DictController {
         return R.success(response);
     }
 
+    @Log(operation = "新增字典")
     @PostMapping
     public R<?> add(@RequestBody Dict dict) {
         dictService.save(dict);
         return R.success();
     }
 
+    @Log(operation = "修改字典")
     @PutMapping
     public R<?> update(@RequestBody Dict dict) {
         dictService.updateById(dict);
         return R.success();
     }
 
+    @Log(operation = "删除字典")
     @DeleteMapping("/{id}")
     public R<?> delete(@PathVariable Long id) {
         dictService.removeById(id);

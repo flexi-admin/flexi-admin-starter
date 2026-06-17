@@ -8,19 +8,24 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("sys_task")
-public class Task {
+@TableName("sys_task_log")
+public class TaskLog {
 
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long tenantId;
-    private String name;
+    private Long taskId;
+    private String taskName;
+    private String taskClassName;
+    private String taskBeanName;
+    private String taskMethodName;
     private String cronExpression;
-    private String className;
-    private String beanName;
-    private String methodName;
-    private Boolean status;
-    private String description;
+    private String status;
+    private String errorMessage;
+    private String resultMessage;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private Long duration;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

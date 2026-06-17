@@ -1,6 +1,7 @@
 package io.github.zmxckj.flexiadmin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.entity.Role;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.security.RequirePermission;
@@ -38,6 +39,7 @@ public class RoleController {
     }
 
     @RequirePermission("role:add")
+    @Log(operation = "新增角色")
     @PostMapping
     public R<?> add(@RequestBody Role role) {
         roleService.save(role);
@@ -45,6 +47,7 @@ public class RoleController {
     }
 
     @RequirePermission("role:update")
+    @Log(operation = "修改角色")
     @PutMapping
     public R<?> update(@RequestBody Role role) {
         roleService.updateById(role);
@@ -52,6 +55,7 @@ public class RoleController {
     }
 
     @RequirePermission("role:delete")
+    @Log(operation = "删除角色")
     @DeleteMapping("/{id}")
     public R<?> delete(@PathVariable Long id) {
         roleService.removeById(id);

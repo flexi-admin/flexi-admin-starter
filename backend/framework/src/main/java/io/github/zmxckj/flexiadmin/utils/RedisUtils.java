@@ -7,10 +7,14 @@ import io.github.zmxckj.flexiadmin.dto.UserInfoDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -21,29 +25,43 @@ public class RedisUtils {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
+    @Value("${flexi.redis.key-prefix:flexi:}")
+    private String keyPrefix;
+
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-    // 缓存用户信息，key: user:{username}
+    private static final ThreadLocal<String> LOCK_HOLDER = new ThreadLocal<>();
+
+    private static final Long RELEASE_SUCCESS = 1L;
+
+    private static final String RELEASE_LOCK_SCRIPT =
+            "if redis.call('get', KEYS[1]) == ARGV[1] then " +
+                    "return redis.call('del', KEYS[1]) " +
+                    "else " +
+                    "return 0 " +
+                    "end";
+
+    private String buildKey(String key) {
+        return keyPrefix + key;
+    }
+
     public void cacheUserInfo(String username, UserInfoDTO userInfo, long expiration) {
         try {
             String jsonUserInfo = objectMapper.writeValueAsString(userInfo);
-            redisTemplate.opsForValue().set("user:" + username, jsonUserInfo, expiration, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(buildKey("user:" + username), jsonUserInfo, expiration, TimeUnit.SECONDS);
         } catch (JsonProcessingException e) {
-            // 序列化失败，直接抛出异常
             logger.error("Failed to serialize user info: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to serialize user info", e);
         }
     }
 
-    // 获取缓存的用户信息
     public UserInfoDTO getUserInfo(String username) {
-        String cachedUserInfo = redisTemplate.opsForValue().get("user:" + username);
+        String cachedUserInfo = redisTemplate.opsForValue().get(buildKey("user:" + username));
         if (cachedUserInfo == null) {
             return null;
         }
         
         try {
-            // 解析JSON字符串为UserInfoDTO
             return objectMapper.readValue(cachedUserInfo, UserInfoDTO.class);
         } catch (Exception e) {
             logger.error("Failed to parse user info: {}", e.getMessage(), e);
@@ -51,20 +69,18 @@ public class RedisUtils {
         }
     }
 
-    // 缓存用户权限，key: user:{username}:permissions
     public void cacheUserPermissions(String username, Object permissions, long expiration) {
         try {
             String jsonPermissions = objectMapper.writeValueAsString(permissions);
-            redisTemplate.opsForValue().set("user:" + username + ":permissions", jsonPermissions, expiration, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(buildKey("user:" + username + ":permissions"), jsonPermissions, expiration, TimeUnit.SECONDS);
         } catch (Exception e) {
             logger.error("Failed to serialize user permissions: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to serialize user permissions", e);
         }
     }
 
-    // 获取缓存的用户权限
     public Object getUserPermissions(String username) {
-        String cachedPermissions = redisTemplate.opsForValue().get("user:" + username + ":permissions");
+        String cachedPermissions = redisTemplate.opsForValue().get(buildKey("user:" + username + ":permissions"));
         if (cachedPermissions == null) {
             return null;
         }
@@ -77,45 +93,38 @@ public class RedisUtils {
         }
     }
 
-    // 将 token 加入黑名单
     public void addTokenToBlacklist(String token, long expiration) {
-        redisTemplate.opsForValue().set("token:blacklist:" + token, "1", expiration, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(buildKey("token:blacklist:" + token), "1", expiration, TimeUnit.SECONDS);
     }
 
-    // 检查 token 是否在黑名单中
     public boolean isTokenInBlacklist(String token) {
-        return redisTemplate.hasKey("token:blacklist:" + token);
+        return redisTemplate.hasKey(buildKey("token:blacklist:" + token));
     }
 
-    // 移除缓存的用户信息
     public void removeUserInfo(String username) {
-        redisTemplate.delete("user:" + username);
+        redisTemplate.delete(buildKey("user:" + username));
     }
 
-    // 移除缓存的用户权限
     public void removeUserPermissions(String username) {
-        redisTemplate.delete("user:" + username + ":permissions");
+        redisTemplate.delete(buildKey("user:" + username + ":permissions"));
     }
 
-    // 刷新缓存过期时间
     public void refreshCacheExpiration(String key, long expiration) {
-        redisTemplate.expire(key, expiration, TimeUnit.SECONDS);
+        redisTemplate.expire(buildKey(key), expiration, TimeUnit.SECONDS);
     }
 
-    // 通用设置缓存
     public void set(String key, Object value, long expiration, TimeUnit timeUnit) {
         try {
             String jsonValue = objectMapper.writeValueAsString(value);
-            redisTemplate.opsForValue().set(key, jsonValue, expiration, timeUnit);
+            redisTemplate.opsForValue().set(buildKey(key), jsonValue, expiration, timeUnit);
         } catch (Exception e) {
             logger.error("Failed to serialize value: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to serialize value", e);
         }
     }
 
-    // 通用获取缓存
     public Object get(String key) {
-        String cachedValue = redisTemplate.opsForValue().get(key);
+        String cachedValue = redisTemplate.opsForValue().get(buildKey(key));
         if (cachedValue == null) {
             return null;
         }
@@ -128,9 +137,8 @@ public class RedisUtils {
         }
     }
 
-    // 通用获取缓存（带类型）
     public <T> T get(String key, Class<T> clazz) {
-        String cachedValue = redisTemplate.opsForValue().get(key);
+        String cachedValue = redisTemplate.opsForValue().get(buildKey(key));
         if (cachedValue == null) {
             return null;
         }
@@ -142,4 +150,66 @@ public class RedisUtils {
             return null;
         }
     }
-} 
+
+    public boolean tryLock(String lockKey, long waitTime, long leaseTime, TimeUnit timeUnit) {
+        String key = buildKey("lock:" + lockKey);
+        String lockValue = UUID.randomUUID().toString();
+        
+        logger.info("尝试获取锁: key={}, lockKey={}, leaseTime={} {}", key, lockKey, leaseTime, timeUnit);
+        
+        try {
+            long waitMillis = timeUnit.toMillis(waitTime);
+            long deadline = System.currentTimeMillis() + waitMillis;
+            
+            while (System.currentTimeMillis() < deadline) {
+                Boolean acquired = redisTemplate.opsForValue().setIfAbsent(key, lockValue, leaseTime, timeUnit);
+                logger.debug("锁尝试结果: key={}, acquired={}", key, acquired);
+                
+                if (Boolean.TRUE.equals(acquired)) {
+                    LOCK_HOLDER.set(lockValue);
+                    logger.info("成功获取锁: key={}, lockKey={}", key, lockKey);
+                    return true;
+                }
+                
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("获取锁被中断: key={}, lockKey={}", key, lockKey);
+                    return false;
+                }
+            }
+            
+            logger.warn("获取锁超时: key={}, lockKey={}", key, lockKey);
+            return false;
+        } catch (Exception e) {
+            logger.error("获取锁异常: key={}, lockKey={}, error={}", key, lockKey, e.getMessage(), e);
+            throw new RuntimeException("获取锁失败: " + lockKey, e);
+        }
+    }
+
+    public boolean tryLock(String lockKey, long leaseTime, TimeUnit timeUnit) {
+        return tryLock(lockKey, 0, leaseTime, timeUnit);
+    }
+
+    public boolean unlock(String lockKey) {
+        String key = buildKey("lock:" + lockKey);
+        String lockValue = LOCK_HOLDER.get();
+        if (lockValue == null) {
+            return false;
+        }
+        
+        try {
+            DefaultRedisScript<Long> script = new DefaultRedisScript<>(RELEASE_LOCK_SCRIPT, Long.class);
+            Long result = redisTemplate.execute(script, Collections.singletonList(key), lockValue);
+            
+            if (RELEASE_SUCCESS.equals(result)) {
+                logger.debug("Released lock: {}", lockKey);
+                return true;
+            }
+            return false;
+        } finally {
+            LOCK_HOLDER.remove();
+        }
+    }
+}

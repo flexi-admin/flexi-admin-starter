@@ -2,6 +2,7 @@ package io.github.zmxckj.flexiadmin.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.config.OssConfig;
 import io.github.zmxckj.flexiadmin.entity.Config;
 import io.github.zmxckj.flexiadmin.entity.Image;
@@ -44,6 +45,7 @@ public class ImageController {
     }
 
     @PostMapping("/upload")
+    @Log(operation = "上传图片")
     @RequirePermission("image:upload")
     public R<Image> uploadImage(@RequestParam("file") MultipartFile file) {
         if (!isImageModuleEnabled()) {
@@ -130,6 +132,7 @@ public class ImageController {
     }
 
     @DeleteMapping("/{id}")
+    @Log(operation = "删除图片")
     @RequirePermission("image:delete")
     public R<?> deleteImage(@PathVariable Long id) {
         if (!isImageModuleEnabled()) {

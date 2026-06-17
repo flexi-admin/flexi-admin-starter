@@ -1,6 +1,7 @@
 package io.github.zmxckj.flexiadmin.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.entity.Menu;
 import io.github.zmxckj.flexiadmin.entity.User;
 import io.github.zmxckj.flexiadmin.common.R;
@@ -45,6 +46,7 @@ public class MenuController {
     }
 
     @RequirePermission("menu:add")
+    @Log(operation = "新增菜单")
     @PostMapping
     public R<?> add(@RequestBody Menu menu) {
         menuService.save(menu);
@@ -52,6 +54,7 @@ public class MenuController {
     }
 
     @RequirePermission("menu:update")
+    @Log(operation = "修改菜单")
     @PutMapping
     public R<?> update(@RequestBody Menu menu) {
         menuService.updateById(menu);
@@ -59,6 +62,7 @@ public class MenuController {
     }
 
     @RequirePermission("menu:delete")
+    @Log(operation = "删除菜单")
     @DeleteMapping("/{id}")
     public R<?> delete(@PathVariable Long id) {
         menuService.removeById(id);

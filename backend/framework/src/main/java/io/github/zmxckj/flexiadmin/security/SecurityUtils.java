@@ -41,6 +41,20 @@ public class SecurityUtils {
         return null;
     }
     
+    public static String getCurrentNickname() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof CustomUserDetails) {
+                // 从CustomUserDetails中获取昵称
+                String nickname = ((CustomUserDetails) principal).getNickname();
+                // 如果昵称为空，则返回username
+                return nickname != null && !nickname.isEmpty() ? nickname : ((CustomUserDetails) principal).getUsername();
+            }
+        }
+        return null;
+    }
+    
     public static Long getCurrentTenantId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {

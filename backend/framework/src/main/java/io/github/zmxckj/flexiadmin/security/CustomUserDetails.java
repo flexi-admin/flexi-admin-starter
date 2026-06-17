@@ -12,16 +12,22 @@ public class CustomUserDetails implements UserDetails {
     
     private Long id;
     private String username;
+    private String nickname;
     private Long tenantId;
     private List<String> authorities;
     private List<String> roles;
     
-    public CustomUserDetails(Long id, String username, Long tenantId, List<String> authorities, List<String> roles) {
+    public CustomUserDetails(Long id, String username, String nickname, Long tenantId, List<String> authorities, List<String> roles) {
         this.id = id;
         this.username = username;
+        this.nickname = nickname;
         this.tenantId = tenantId;
         this.authorities = authorities;
         this.roles = roles;
+    }
+    
+    public String getNickname() {
+        return nickname;
     }
     
     public Long getId() {

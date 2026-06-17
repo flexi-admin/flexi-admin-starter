@@ -1,6 +1,7 @@
 package io.github.zmxckj.flexiadmin.controller;
 
 import io.github.zmxckj.flexiadmin.entity.Menu;
+import io.github.zmxckj.flexiadmin.annotation.Log;
 import io.github.zmxckj.flexiadmin.common.R;
 import io.github.zmxckj.flexiadmin.dto.SaveRolePermissionDTO;
 import io.github.zmxckj.flexiadmin.service.MenuService;
@@ -30,6 +31,7 @@ public class RoleMenuController {
     }
 
     // 保存角色的菜单权限
+    @Log(operation = "保存角色权限")
     @PostMapping
     public R<?> saveRolePermissions(@RequestBody SaveRolePermissionDTO saveRolePermissionDTO) {
         Long roleId = saveRolePermissionDTO.getRoleId();

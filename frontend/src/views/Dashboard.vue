@@ -295,30 +295,31 @@ const updateCurrentTime = () => {
   dayOfWeek.value = weekdays[now.getDay()]
 }
 
+// 切换全屏
 const toggleFullscreen = () => {
+  const el = document.documentElement as HTMLElement & {
+    mozRequestFullScreen?: () => void
+    webkitRequestFullscreen?: () => void
+    msRequestFullscreen?: () => void
+  }
+  const doc = document as Document & {
+    mozCancelFullScreen?: () => void
+    webkitExitFullscreen?: () => void
+    msExitFullscreen?: () => void
+  }
   if (!isFullscreen.value) {
-    const element = document.documentElement as HTMLElement & {
-      mozRequestFullScreen?: () => void
-      webkitRequestFullscreen?: () => void
-      msRequestFullscreen?: () => void
-    }
-    if (element.requestFullscreen) {
-      element.requestFullscreen()
-    } else if (element.mozRequestFullScreen) {
-      element.mozRequestFullScreen()
-    } else if (element.webkitRequestFullscreen) {
-      element.webkitRequestFullscreen()
-    } else if (element.msRequestFullscreen) {
-      element.msRequestFullscreen()
+    if (el.requestFullscreen) {
+      el.requestFullscreen()
+    } else if (el.mozRequestFullScreen) {
+      el.mozRequestFullScreen()
+    } else if (el.webkitRequestFullscreen) {
+      el.webkitRequestFullscreen()
+    } else if (el.msRequestFullscreen) {
+      el.msRequestFullscreen()
     }
   } else {
-    const doc = document as Document & {
-      mozCancelFullScreen?: () => void
-      webkitExitFullscreen?: () => void
-      msExitFullscreen?: () => void
-    }
-    if (doc.exitFullscreen) {
-      doc.exitFullscreen()
+    if (document.exitFullscreen) {
+      document.exitFullscreen()
     } else if (doc.mozCancelFullScreen) {
       doc.mozCancelFullScreen()
     } else if (doc.webkitExitFullscreen) {
@@ -690,10 +691,11 @@ const destroyCharts = () => {
   amountChart?.dispose()
 }
 
-const debounce = <T extends (...args: unknown[]) => unknown>(func: T, delay: number) => {
+// 防抖函数
+const debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
   let timer: ReturnType<typeof setTimeout> | null = null
-  return function(this: unknown, ...args: Parameters<T>) {
-    clearTimeout(timer)
+  return function (this: unknown, ...args: Parameters<T>) {
+    if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
       func.apply(this, args)
     }, delay)
@@ -711,15 +713,17 @@ const resizeCharts = debounce(() => {
   })
 }, 200)
 
+// 监听全屏状态变化
 const handleFullscreenChange = () => {
   const doc = document as Document & {
     mozFullScreenElement?: Element | null
     webkitFullscreenElement?: Element | null
     msFullscreenElement?: Element | null
   }
-  isFullscreen.value = !!(doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement)
+  isFullscreen.value = !!(document.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement)
 }
 
+// 调整页面高度
 const adjustHeight = () => {
   const container = document.querySelector('.dashboard-container') as HTMLElement | null
   if (container) {

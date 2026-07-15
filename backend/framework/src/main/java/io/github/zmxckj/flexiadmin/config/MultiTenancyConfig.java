@@ -17,7 +17,7 @@ public class MultiTenancyConfig {
     
     private String tenantIdColumn = "tenant_id";
 
-    private List<String> ignoreTables;
+    private List<String> ignoreTables = new ArrayList<>();
     
     private List<String> defaultIgnoreTables = new ArrayList<>(Arrays.asList(
             "sys_tenant",
